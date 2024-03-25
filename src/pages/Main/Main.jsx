@@ -2,6 +2,7 @@ import React from 'react';
 import { useState, useRef, useEffect } from 'react';
 import './Main.css';
 import chat_logo from '../../images/chat_component.png';
+import { Axios } from 'axios';
 import user_icon from '../../images/user_icon33.png';
 // import { VscSend } from 'react-icons/vsc';
 // import { BsSendFill } from 'react-icons/bs';
@@ -9,6 +10,7 @@ import { IoMdSend } from 'react-icons/io';
 
 const Main = () => {
   const [userInput, setUserInput] = useState('');
+  // const [chatbotInput, setChatBotInput] =  useState('');
   const textAreaRef = useRef(null);
   const [messages, setMessages] = useState([
     {
@@ -24,27 +26,45 @@ const Main = () => {
     const textareaEle = textAreaRef.current;
 
     const adjustTextareaHeight = () => {
-        textareaEle.style.height = 'auto';
-        textareaEle.style.height = `${textareaEle.scrollHeight}px`;
+      textareaEle.style.height = 'auto';
+      textareaEle.style.height = `${textareaEle.scrollHeight}px`;
     };
 
     textareaEle.addEventListener('input', adjustTextareaHeight);
 
     return () => {
-        textareaEle.removeEventListener('input', adjustTextareaHeight);
-       
+      textareaEle.removeEventListener('input', adjustTextareaHeight);
     };
-}, []);
+  }, []);
 
-  const handleSubmit = (e) => {
-
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!userInput.trim()) return;
-    
+
     textAreaRef.current.style.height = '60px';
 
     setMessages([...messages, { text: userInput, id: 'user' }]);
     setUserInput('');
+
+    const data = await Axios.post('http://localhost:3000', {
+      text: userInput,
+      id: 'user',
+    });
+    try {
+      if (data.status === 200) {
+        const getRq = await Axios.get('http://localhost:3000');
+
+        try {
+          const chatInput = getRq.res;
+          //si tu renvoi l'objet directement tu mais l'objet une fois.
+          setMessages([...messages, { text: chatInput, id: 'chatbot' }]);
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -56,7 +76,6 @@ const Main = () => {
 
   return (
     <div className="main-container">
-
       <div className="introduction">
         <div className="content column">
           {messages
@@ -104,7 +123,7 @@ const Main = () => {
             rows="1"
             value={userInput}
             onChange={(e) => setUserInput(e.target.value)}
-            style={{minHeight: "60px"}}
+            style={{ minHeight: '60px' }}
           ></textarea>
           <button type="submit" onClick={handleSubmit} className="btn">
             {userInput.trim() === '' ? (
